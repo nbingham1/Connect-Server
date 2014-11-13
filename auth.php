@@ -4,7 +4,7 @@ ini_set('display_errors', 'On');
 
 if (isset($_GET['code'])) {
 	$url = 'https://api.moves-app.com/oauth/v1/access_token';
-        $data = array('grant_type' => 'authorization_code', 'code' => $_GET['code'], 'client_id' => 'BHJJXLewp3VFBhgOY1T7NVlyXGsOtMF1', 'client_secret' => 'PnpXEjNU4xKiwp69q6pBTrva04Ez94arfCXvg9n3FxVwG5DQN7tUBnSKN7NFc5ch', 'redirect_uri' => 'http://www.sol-union.com/moves/auth.php');
+        $data = array('grant_type' => 'authorization_code', 'code' => $_GET['code'], 'client_id' => 'BHJJXLewp3VFBhgOY1T7NVlyXGsOtMF1', 'client_secret' => 'PnpXEjNU4xKiwp69q6pBTrva04Ez94arfCXvg9n3FxVwG5DQN7tUBnSKN7NFc5ch', 'redirect_uri' => 'http://connect.sol-union.com/auth.php');
 
 	$ch = curl_init();
 
