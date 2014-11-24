@@ -7,7 +7,6 @@ import datetime
 import json
 import sys
 
-
 sys.stderr = sys.stdout
 
 print("Content-type: text/plain\r\n\r\n")
@@ -55,6 +54,10 @@ elif 'update' in form:
 	cur.execute("select access_token,last_update from users where id=%s", (user_id,))
         results = cur.fetchall()
 	
+	location_insert = "insert into locations (id, lat, lon) values (%s, %s, %s)"
+	transport_insert = "insert into transport (user_id, start_location, end_location, start_time, end_time, activity) values (%s, %s, %s, %s, %s, %s)"
+	places_insert = "insert into places (user_id, location_id, start, end, place) values (%s, %s, %s, %s, %s)"
+	friends_insert = "insert into friends (user1_id, user2_id) values (%s, %s)"
 
 	if len(results) > 0:
 		access_token = results[0][0]
@@ -73,7 +76,16 @@ elif 'update' in form:
 		for day in payload:
 			print(day['date'])	
 			for segment in day['segments']:
-				print segment
+				
+				if 'type' in segment and segment['type'] == 'place':
+					if 'place' in segment:
+						place = segment['place']
+						print place
+				if 'type' in segment and segment['type'] == 'move':
+					if 'activities' in segment:
+						activities = segment['activities']
+						
+#				print segment
 #				if 'activities' in segment:
 #					for activity in segment['activities']:
 #						print activity
