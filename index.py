@@ -71,21 +71,47 @@ elif 'update' in form:
 
 		r = requests.get(url, params = payload)
 
-	        payload = json.loads(r.text)
+	    payload = json.loads(r.text)
 
 		for day in payload:
 			print(day['date'])	
 			for segment in day['segments']:
+				start_time = ""
+				end_time = ""
+				place_name = ""
+				location_id = ""
+				user_id = ""
+				start_location = ""
+				end_location = ""
+				activity = ""
+				lat = ""
+				lon = ""
+				
+				if 'startTime' in segment:
+					start_time = segment['startTime']
+				if 'endTime' in segment:
+					end_time = segment['endTime']
 				
 				if 'type' in segment and segment['type'] == 'place':
 					if 'place' in segment:
 						place = segment['place']
-						print place
-				if 'type' in segment and segment['type'] == 'move':
+						if 'location' in place:
+							location = place['location']							
+							if 'lat' in location:
+								lat = location['lat']
+							if 'lon' in location:
+								lon = location['lon']
+								
+						if 'name' in place:
+							place_name = place['name']
+						if 'id' in place:
+							location_id = place['id']
+							
+				elif 'type' in segment and segment['type'] == 'move':
 					if 'activities' in segment:
 						activities = segment['activities']
-						
-#				print segment
+				else:
+					print segment
 #				if 'activities' in segment:
 #					for activity in segment['activities']:
 #						print activity
