@@ -7,6 +7,8 @@ import datetime
 import json
 import sys
 
+# testing connectivity
+
 sys.stderr = sys.stdout
 
 print("Content-type: text/plain\r\n\r\n")
