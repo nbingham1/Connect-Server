@@ -107,7 +107,7 @@ elif 'update' in form:
 						if 'id' in place:
 							location_id = place['id']
 				
-					print(str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
+					print(str(start_time) + " -> " + str(end_time) + ":" + str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
 
 				elif 'type' in segment and segment['type'] == 'move':
 					if 'activities' in segment:
