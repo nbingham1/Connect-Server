@@ -36,39 +36,7 @@ def check_place_and_add(user_id, location_id, start, end, place_name):
 	return
 
 print("Content-type: text/plain\r\n\r\n")
-if 'code' in form or 'refresh_token' in form:
-	url='https://api.moves-app.com/oauth/v1/access_token'
-	payload={}
-	if 'code' in form:
-		payload = { 'grant_type' : 'authorization_code',
-			    'code' : form['code'].value,
-			    'client_id' : 'BHJJXLewp3VFBhgOY1T7NVlyXGsOtMF1',
-			    'client_secret' : 'PnpXEjNU4xKiwp69q6pBTrva04Ez94arfCXvg9n3FxVwG5DQN7tUBnSKN7NFc5ch', 
-			    'redirect_uri' : 'http://connect.sol-union.com/index.py' }
-	elif 'refresh_token' in form:
-	        payload = { 'grant_type' : 'refresh_token',
-        	            'refresh_token' : form['refresh_token'].value,
-        	            'client_id' : 'BHJJXLewp3VFBhgOY1T7NVlyXGsOtMF1',
-        	            'client_secret' : 'PnpXEjNU4xKiwp69q6pBTrva04Ez94arfCXvg9n3FxVwG5DQN7tUBnSKN7NFc5ch' }
-
-	r = requests.post(url, params = payload)
-
-	payload = json.loads(r.text)
-	print(payload)
-
-	if 'error' in payload:
-		print("Error: " + payload['error'])
-	else:
-		print(payload['user_id'])
-		cur.execute("select * from users where id=%s", (payload['user_id'],))
-		results = cur.fetchall()
-		if len(results) > 0:
-			cur.execute("update users set access_token=%s, refresh_token=%s, token_type=%s, expires_in=%s, last_update=%s where id=%s", (payload['access_token'], payload['refresh_token'], payload['token_type'], payload['expires_in'],time.time(),payload['user_id'],))
-			con.commit()
-		else:
-			cur.execute("insert into users (id, access_token, refresh_token, token_type, expires_in, last_update) values (%s, %s, %s, %s, %s, %s)", (payload['user_id'], payload['access_token'], payload['refresh_token'], payload['token_type'], payload['expires_in'],time.time(),))
-			con.commit()
-elif 'update' in form:
+if 'update' in form:
 	user_id = form['update'].value
 
 	cur.execute("select access_token,last_update from users where id=%s", (user_id,))
@@ -91,15 +59,15 @@ elif 'update' in form:
 		for day in payload:
 			print(day['date'])	
 			for segment in day['segments']:
-				start_time = ""
-				end_time = ""
-				place_name = ""
-				location_id = ""
-				start_location = ""
-				end_location = ""
-				activity = ""
-				lat = ""
-				lon = ""
+				start_time = None
+				end_time = None
+				place_name = None
+				location_id = None
+				start_lat = None
+				start_lon = None
+				end_lon = None
+				end_lat = None
+				activity = None
 				
 				if 'startTime' in segment:
 					start_time = totimestamp(datetime.strptime(segment['startTime'][:-5], "%Y%m%dT%H%M%S"))
@@ -117,19 +85,47 @@ elif 'update' in form:
 						if 'location' in place:
 							location = place['location']							
 							if 'lat' in location:
-								lat = location['lat']
+								start_lat = location['lat']
 							if 'lon' in location:
-								lon = location['lon']
+								start_lon = location['lon']
 							
 							if 'id' in place:
-								check_location_and_add(location_id, lat, lon)
+								check_location_and_add(location_id, start_lat, start_lon)
 		
 						check_place_and_add(user_id, location_id, start_time, end_time, place_name)
-					print(str(start_time) + " -> " + str(end_time) + ":" + str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
-
 				elif 'type' in segment and segment['type'] == 'move':
 					if 'activities' in segment:
 						activities = segment['activities']
+						for activity in activities:
+							start_lat = None
+							end_lat = None
+							start_lon = None
+							end_lon = None
+							start_time = None
+							end_time = None
+
+							if 'activity' in activity:
+								print activity['activity']
+								
+							if 'trackPoints' in activity:
+								trackPoints = activity['trackPoints']
+								for trackPoint in trackPoints:
+									if 'lat' in trackPoint:
+										start_lat = end_lat
+										end_lat = trackPoint['lat']
+									if 'lon' in trackPoint:
+										start_lon = end_lon
+										end_lon = trackPoint['lon']
+									if 'time' in trackPoint:
+										start_time = end_time
+										end_time = trackPoint['lon']
+
+									if end_lat is not None and end_lon is not None:
+										check_location_and_add(0, end_lat, end_lon)
+
+									if start_time is not None and start_lon is not None and start_lat is not None:
+										print(str(start_lat) + "->" + str(end_lat) + " " + str(start_lon) + "->" + str(end_lon) + " " + str(start_time) + "->" + str(end_time))
+						
 				else:
 					print segment
 #				if 'activities' in segment:
