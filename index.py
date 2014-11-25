@@ -7,25 +7,24 @@ import datetime
 import json
 import sys
 
-def check_location_and_add(con, cur, id, lat, lon):
-	cur.execute("select id,lat,lon from locations where id=%s", (id,))
-        results = cur.fetchall()
-	if len(results) > 0:
-		print results
-	else
-		print("no location " + str(id) + " " + str(lat) + " " + str(lon) = " exists")
-
-
-
 sys.stderr = sys.stdout
-
-print("Content-type: text/plain\r\n\r\n")
 
 con = db.connect('localhost', 'connect', 'socialize', 'connect')
 cur = con.cursor()
 
 form = cgi.FieldStorage()
 
+def check_location_and_add(lid, lat, lon):
+	cur.execute("select id,lat,lon from locations where id=%s", (lid,))
+        results = cur.fetchall()
+	if len(results) > 0:
+		print(results)
+	else:
+		print("no location " + str(lid) + " " + str(lat) + " " + str(lon) + " exists")
+	return
+
+
+print("Content-type: text/plain\r\n\r\n")
 if 'code' in form or 'refresh_token' in form:
 	url='https://api.moves-app.com/oauth/v1/access_token'
 	payload={}
@@ -118,7 +117,7 @@ elif 'update' in form:
 								lon = location['lon']
 							
 							if 'id' in place:
-								check_location_and_add(con, cur, id, lat, lon)
+								check_location_and_add(location_id, lat, lon)
 		
 
 					print(str(start_time) + " -> " + str(end_time) + ":" + str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
