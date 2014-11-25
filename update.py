@@ -47,8 +47,8 @@ def check_transport_and_add(user_id, start_location, end_location, start_time, e
 	return
 
 print("Content-type: text/plain\r\n")
-if 'update' in form:
-	user_id = form['update'].value
+if 'user' in form:
+	user_id = form['user'].value
 
 	cur.execute("select access_token,last_update from users where id=%s", (user_id,))
         results = cur.fetchall()
