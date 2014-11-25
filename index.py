@@ -7,6 +7,7 @@ import datetime
 from datetime import datetime
 import json
 import sys
+from model import model
 
 sys.stderr = sys.stdout
 
@@ -45,7 +46,7 @@ def check_transport_and_add(user_id, start_location, end_location, start_time, e
 		con.commit()
 	return
 
-print("Content-type: text/plain\r\n\r\n")
+print("Content-type: text/plain\r\n")
 if 'update' in form:
 	user_id = form['update'].value
 
@@ -138,3 +139,4 @@ if 'update' in form:
 						
 				else:
 					print("error: unhandled segment\n" + str(segment))
+	model(con, cur, user_id)
