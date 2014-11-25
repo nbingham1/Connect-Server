@@ -71,7 +71,7 @@ elif 'update' in form:
 
 		r = requests.get(url, params = payload)
 
-	    payload = json.loads(r.text)
+	    	payload = json.loads(r.text)
 
 		for day in payload:
 			print(day['date'])	
