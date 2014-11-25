@@ -4,6 +4,7 @@ import requests
 import MySQLdb as db
 import time
 import datetime
+from datetime import datetime
 import json
 import sys
 
@@ -14,15 +15,25 @@ cur = con.cursor()
 
 form = cgi.FieldStorage()
 
+def totimestamp(dt, epoch=datetime(1970,1,1)):
+    td = dt - epoch
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 1e6 
+
 def check_location_and_add(lid, lat, lon):
 	cur.execute("select id,lat,lon from locations where id=%s", (lid,))
         results = cur.fetchall()
-	if len(results) > 0:
-		print(results)
-	else:
-		print("no location " + str(lid) + " " + str(lat) + " " + str(lon) + " exists")
+	if len(results) == 0:
+		cur.execute("insert into locations (id,lat,lon) values (%s, %s, %s)", (lid, lat, lon,))
+		con.commit()
 	return
 
+def check_place_and_add(user_id, location_id, start, end, place_name):
+	cur.execute("select user_id,location_id,start,end,place from places where location_id=%s and start=%s and end=%s", (location_id,start,end,))
+	results = cur.fetchall()
+	if len(results) == 0:
+		cur.execute("insert into places (user_id, location_id, start, end, place) values (%s, %s, %s, %s, %s)", (user_id, location_id, start, end, place_name,))
+		con.commit()
+	return
 
 print("Content-type: text/plain\r\n\r\n")
 if 'code' in form or 'refresh_token' in form:
@@ -63,11 +74,6 @@ elif 'update' in form:
 	cur.execute("select access_token,last_update from users where id=%s", (user_id,))
         results = cur.fetchall()
 	
-	location_insert = "insert into locations (id, lat, lon) values (%s, %s, %s)"
-	transport_insert = "insert into transport (user_id, start_location, end_location, start_time, end_time, activity) values (%s, %s, %s, %s, %s, %s)"
-	places_insert = "insert into places (user_id, location_id, start, end, place) values (%s, %s, %s, %s, %s)"
-	friends_insert = "insert into friends (user1_id, user2_id) values (%s, %s)"
-
 	if len(results) > 0:
 		access_token = results[0][0]
 		old_timestamp = results[0][1]
@@ -76,7 +82,7 @@ elif 'update' in form:
 		old_timestamp = float(old_timestamp) - 60*60*24*5	
 
 		url = 'https://api.moves-app.com/api/1.1/user/storyline/daily'
-		payload = {'access_token' : access_token, 'pastDays' : int((60*60*24 - 1 + timestamp - float(old_timestamp))/(60*60*24)), 'updatedSince' : datetime.datetime.fromtimestamp(old_timestamp).strftime("%Y%m%dT%H%M%SZ"), 'trackPoints' : 'true'}
+		payload = {'access_token' : access_token, 'pastDays' : int((60*60*24 - 1 + timestamp - float(old_timestamp))/(60*60*24)), 'updatedSince' : datetime.fromtimestamp(old_timestamp).strftime("%Y%m%dT%H%M%SZ"), 'trackPoints' : 'true'}
 
 		r = requests.get(url, params = payload)
 
@@ -89,7 +95,6 @@ elif 'update' in form:
 				end_time = ""
 				place_name = ""
 				location_id = ""
-				user_id = ""
 				start_location = ""
 				end_location = ""
 				activity = ""
@@ -97,9 +102,9 @@ elif 'update' in form:
 				lon = ""
 				
 				if 'startTime' in segment:
-					start_time = segment['startTime']
+					start_time = totimestamp(datetime.strptime(segment['startTime'][:-5], "%Y%m%dT%H%M%S"))
 				if 'endTime' in segment:
-					end_time = segment['endTime']
+					end_time = totimestamp(datetime.strptime(segment['endTime'][:-5], "%Y%m%dT%H%M%S"))
 				
 				if 'type' in segment and segment['type'] == 'place':
 					if 'place' in segment:
@@ -119,7 +124,7 @@ elif 'update' in form:
 							if 'id' in place:
 								check_location_and_add(location_id, lat, lon)
 		
-
+						check_place_and_add(user_id, location_id, start_time, end_time, place_name)
 					print(str(start_time) + " -> " + str(end_time) + ":" + str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
 
 				elif 'type' in segment and segment['type'] == 'move':
