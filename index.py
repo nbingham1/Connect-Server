@@ -19,19 +19,29 @@ def totimestamp(dt, epoch=datetime(1970,1,1)):
     td = dt - epoch
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 1e6 
 
-def check_location_and_add(lid, lat, lon):
-	cur.execute("select id,lat,lon from locations where id=%s", (lid,))
+def check_location_and_add(lat, lon):
+	cur.execute("select id from locations where lat=%s and lon=%s", (lat,lon,))
         results = cur.fetchall()
 	if len(results) == 0:
-		cur.execute("insert into locations (id,lat,lon) values (%s, %s, %s)", (lid, lat, lon,))
+		cur.execute("insert into locations (lat,lon) values (%s, %s)", (lat, lon,))
 		con.commit()
-	return
+		return cur.lastrowid
+	else:
+		return results[0][0]
 
 def check_place_and_add(user_id, location_id, start, end, place_name):
 	cur.execute("select user_id,location_id,start,end,place from places where location_id=%s and start=%s and end=%s", (location_id,start,end,))
 	results = cur.fetchall()
 	if len(results) == 0:
 		cur.execute("insert into places (user_id, location_id, start, end, place) values (%s, %s, %s, %s, %s)", (user_id, location_id, start, end, place_name,))
+		con.commit()
+	return
+
+def check_transport_and_add(user_id, start_location, end_location, start_time, end_time, activity):
+	cur.execute("select user_id,start_location,end_location,start_time,end_time,activity from transport where user_id=%s and start_location=%s and end_location=%s and start_time=%s and end_time=%s", (user_id, start_location, end_location, start_time, end_time,))
+	results = cur.fetchall()
+	if len(results) == 0:
+		cur.execute("insert into transport (user_id,start_location,end_location,start_time,end_time,activity) values(%s, %s, %s, %s, %s, %s)", (user_id, start_location, end_location, start_time, end_time, activity,))
 		con.commit()
 	return
 
@@ -62,12 +72,11 @@ if 'update' in form:
 				start_time = None
 				end_time = None
 				place_name = None
-				location_id = None
-				start_lat = None
-				start_lon = None
-				end_lon = None
-				end_lat = None
-				activity = None
+				start_location = None
+				end_location = None
+				lat = None
+				lon = None
+				activity_name = None
 				
 				if 'startTime' in segment:
 					start_time = totimestamp(datetime.strptime(segment['startTime'][:-5], "%Y%m%dT%H%M%S"))
@@ -79,52 +88,50 @@ if 'update' in form:
 						place = segment['place']
 						if 'name' in place:
 							place_name = place['name']
-						if 'id' in place:
-							location_id = place['id']
 
 						if 'location' in place:
 							location = place['location']							
 							if 'lat' in location:
-								start_lat = location['lat']
+								lat = location['lat']
 							if 'lon' in location:
-								start_lon = location['lon']
+								lon = location['lon']
 							
-							if 'id' in place:
-								check_location_and_add(location_id, start_lat, start_lon)
-		
-						check_place_and_add(user_id, location_id, start_time, end_time, place_name)
+							if lat is not None and lon is not None:
+								start_location = check_location_and_add(lat, lon)
+						
+						if start_location is not None and start_time is not None and end_time is not None:
+							check_place_and_add(user_id, start_location, start_time, end_time, place_name)
 				elif 'type' in segment and segment['type'] == 'move':
 					if 'activities' in segment:
 						activities = segment['activities']
 						for activity in activities:
-							start_lat = None
-							end_lat = None
-							start_lon = None
-							end_lon = None
+							start_location = None
+							end_location = None
 							start_time = None
 							end_time = None
-
+							activity_name = None
+	
 							if 'activity' in activity:
-								print activity['activity']
+								activity_name = activity['activity']
 								
 							if 'trackPoints' in activity:
 								trackPoints = activity['trackPoints']
 								for trackPoint in trackPoints:
 									if 'lat' in trackPoint:
-										start_lat = end_lat
-										end_lat = trackPoint['lat']
+										lat = trackPoint['lat']
 									if 'lon' in trackPoint:
-										start_lon = end_lon
-										end_lon = trackPoint['lon']
+										lon = trackPoint['lon']
 									if 'time' in trackPoint:
 										start_time = end_time
-										end_time = trackPoint['lon']
+										end_time = totimestamp(datetime.strptime(trackPoint['time'][:-5], "%Y%m%dT%H%M%S"))
 
-									if end_lat is not None and end_lon is not None:
-										check_location_and_add(0, end_lat, end_lon)
+									if lat is not None and lon is not None:
+										start_location = end_location
+										end_location = check_location_and_add(lat, lon)
+									
 
-									if start_time is not None and start_lon is not None and start_lat is not None:
-										print(str(start_lat) + "->" + str(end_lat) + " " + str(start_lon) + "->" + str(end_lon) + " " + str(start_time) + "->" + str(end_time))
+									if start_time is not None and end_time is not None and start_location is not None and end_location is not None:
+										check_transport_and_add(user_id, start_location, end_location, start_time, end_time, activity_name)
 						
 				else:
 					print segment

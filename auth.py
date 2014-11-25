@@ -15,7 +15,7 @@ cur = con.cursor()
 
 form = cgi.FieldStorage()
 
-print("Content-type: text/plain\r\n\r\n")
+print("Content-type: text/plain\r\n")
 if 'code' in form or 'refresh_token' in form:
 	url='https://api.moves-app.com/oauth/v1/access_token'
 	payload={}
@@ -24,7 +24,7 @@ if 'code' in form or 'refresh_token' in form:
 			    'code' : form['code'].value,
 			    'client_id' : 'BHJJXLewp3VFBhgOY1T7NVlyXGsOtMF1',
 			    'client_secret' : 'PnpXEjNU4xKiwp69q6pBTrva04Ez94arfCXvg9n3FxVwG5DQN7tUBnSKN7NFc5ch', 
-			    'redirect_uri' : 'http://connect.sol-union.com/index.py' }
+			    'redirect_uri' : 'http://connect.sol-union.com/auth.py' }
 	elif 'refresh_token' in form:
 	        payload = { 'grant_type' : 'refresh_token',
         	            'refresh_token' : form['refresh_token'].value,
@@ -33,13 +33,12 @@ if 'code' in form or 'refresh_token' in form:
 
 	r = requests.post(url, params = payload)
 
-	payload = json.loads(r.text)
-	print(payload)
+	print(r.text)
 
+	payload = json.loads(r.text)
 	if 'error' in payload:
 		print("Error: " + payload['error'])
 	else:
-		print(payload['user_id'])
 		cur.execute("select * from users where id=%s", (payload['user_id'],))
 		results = cur.fetchall()
 		if len(results) > 0:
