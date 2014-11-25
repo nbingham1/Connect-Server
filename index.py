@@ -7,6 +7,16 @@ import datetime
 import json
 import sys
 
+def check_location_and_add(con, cur, id, lat, lon):
+	cur.execute("select id,lat,lon from locations where id=%s", (id,))
+        results = cur.fetchall()
+	if len(results) > 0:
+		print results
+	else
+		print("no location " + str(id) + " " + str(lat) + " " + str(lon) = " exists")
+
+
+
 sys.stderr = sys.stdout
 
 print("Content-type: text/plain\r\n\r\n")
@@ -95,18 +105,22 @@ elif 'update' in form:
 				if 'type' in segment and segment['type'] == 'place':
 					if 'place' in segment:
 						place = segment['place']
+						if 'name' in place:
+							place_name = place['name']
+						if 'id' in place:
+							location_id = place['id']
+
 						if 'location' in place:
 							location = place['location']							
 							if 'lat' in location:
 								lat = location['lat']
 							if 'lon' in location:
 								lon = location['lon']
-								
-						if 'name' in place:
-							place_name = place['name']
-						if 'id' in place:
-							location_id = place['id']
-				
+							
+							if 'id' in place:
+								check_location_and_add(con, cur, id, lat, lon)
+		
+
 					print(str(start_time) + " -> " + str(end_time) + ":" + str(lat) + " " + str(lon) + " " + str(place_name) + " " + str(location_id))
 
 				elif 'type' in segment and segment['type'] == 'move':
