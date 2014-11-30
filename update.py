@@ -68,75 +68,76 @@ if 'user' in form:
 	    	payload = json.loads(r.text)
 
 		for day in payload:
-			for segment in day['segments']:
-				if 'type' in segment and segment['type'] == 'place':
-					start_time = None
-					end_time = None
-
-					if 'startTime' in segment:
-						start_time = totimestamp(datetime.strptime(segment['startTime'][:-5], "%Y%m%dT%H%M%S"))
-					if 'endTime' in segment:
-						end_time = totimestamp(datetime.strptime(segment['endTime'][:-5], "%Y%m%dT%H%M%S"))
-
-					if 'place' in segment:
-						place_name = None
-
-						place = segment['place']
-						if 'name' in place:
-							place_name = place['name']
-
-						if 'location' in place:
-							lat = None
-							lon = None
-							start_location = None
-
-							location = place['location']							
-							if 'lat' in location:
-								lat = location['lat']
-							if 'lon' in location:
-								lon = location['lon']
-							
-							if lat is not None and lon is not None:
-								start_location = check_location_and_add(lat, lon)
-						
-						if start_location is not None and start_time is not None and end_time is not None:
-							check_place_and_add(user_id, start_location, start_time, end_time, place_name)
-				elif 'type' in segment and segment['type'] == 'move':
-					if 'activities' in segment:
-						activities = segment['activities']
-						for activity in activities:
-							start_location = None
-							end_location = None
-							start_time = None
-							end_time = None
-							activity_name = None
+			if 'segments' in day:
+				for segment in day['segments']:
+					if 'type' in segment and segment['type'] == 'place':
+						start_time = None
+						end_time = None
 	
-							if 'activity' in activity:
-								activity_name = activity['activity']
-								
-							if 'trackPoints' in activity:
-								trackPoints = activity['trackPoints']
-								for trackPoint in trackPoints:
-									lat = None
-									lon = None
-									start_time = end_time
-									end_time = None
-									start_location = end_location
-									end_location = None
+						if 'startTime' in segment:
+							start_time = totimestamp(datetime.strptime(segment['startTime'][:-5], "%Y%m%dT%H%M%S"))
+						if 'endTime' in segment:
+							end_time = totimestamp(datetime.strptime(segment['endTime'][:-5], "%Y%m%dT%H%M%S"))
+	
+						if 'place' in segment:
+							place_name = None
 
-									if 'lat' in trackPoint:
-										lat = trackPoint['lat']
-									if 'lon' in trackPoint:
-										lon = trackPoint['lon']
-									if 'time' in trackPoint:
-										end_time = totimestamp(datetime.strptime(trackPoint['time'][:-5], "%Y%m%dT%H%M%S"))
+							place = segment['place']
+							if 'name' in place:
+								place_name = place['name']
 
-									if lat is not None and lon is not None:
-										end_location = check_location_and_add(lat, lon)
+							if 'location' in place:
+								lat = None
+								lon = None
+								start_location = None
+	
+								location = place['location']							
+								if 'lat' in location:
+									lat = location['lat']
+								if 'lon' in location:
+									lon = location['lon']
+							
+								if lat is not None and lon is not None:
+									start_location = check_location_and_add(lat, lon)
+							
+							if start_location is not None and start_time is not None and end_time is not None:
+								check_place_and_add(user_id, start_location, start_time, end_time, place_name)
+					elif 'type' in segment and segment['type'] == 'move':
+						if 'activities' in segment:
+							activities = segment['activities']
+							for activity in activities:
+								start_location = None
+								end_location = None
+								start_time = None
+								end_time = None
+								activity_name = None
+		
+								if 'activity' in activity:
+									activity_name = activity['activity']
 									
-									if start_time is not None and end_time is not None and start_location is not None and end_location is not None:
-										check_transport_and_add(user_id, start_location, end_location, start_time, end_time, activity_name)
-						
-				else:
-					print("error: unhandled segment\n" + str(segment))
+								if 'trackPoints' in activity:
+									trackPoints = activity['trackPoints']
+									for trackPoint in trackPoints:
+										lat = None
+										lon = None
+										start_time = end_time
+										end_time = None
+										start_location = end_location
+										end_location = None
+	
+										if 'lat' in trackPoint:
+											lat = trackPoint['lat']
+										if 'lon' in trackPoint:
+											lon = trackPoint['lon']
+										if 'time' in trackPoint:
+											end_time = totimestamp(datetime.strptime(trackPoint['time'][:-5], "%Y%m%dT%H%M%S"))
+	
+										if lat is not None and lon is not None:
+											end_location = check_location_and_add(lat, lon)
+										
+										if start_time is not None and end_time is not None and start_location is not None and end_location is not None:
+											check_transport_and_add(user_id, start_location, end_location, start_time, end_time, activity_name)
+							
+					else:
+						print("error: unhandled segment\n" + str(segment))
 	model(con, cur, user_id)
