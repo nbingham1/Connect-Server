@@ -90,14 +90,23 @@ def normal_radii(users, places, friends):
 	return
 
 def current_radii(users, friends):
-	return	
+	for friend in friends:
+		user1 = None
+		user2 = None
+		for user in users: 
+			if user['id'] == friend['user1_id']:
+				user1 = user
+			if user['id'] == friend['user2_id']:
+				user2 = user
+		friend['current_radius'] = get_distance(user1['lat'], user1['lon'], user2['lat'], user2['lon'])
+	return
 
 def model(con, cur, user_id):
 	users = get_users(con, cur, user_id)
 	places = get_places(con, cur, user_id)
 	friends = get_friends(con, cur, user_id)
 	normal_radii(users, places, friends)
-	
+	current_radii(users, friends)
 	for friend in friends:
 		print(friend)
 
