@@ -140,4 +140,5 @@ if 'user' in form:
 							
 					else:
 						print("error: unhandled segment\n" + str(segment))
-	model(con, cur, user_id)
+
+	print(model(con, cur, user_id))
