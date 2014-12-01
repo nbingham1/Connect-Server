@@ -112,7 +112,10 @@ def get_radius_mean(friends):
 			friend['radius_mean'] += radius 
 			count += 1
 
-		friend['radius_mean'] /= count
+		if count != 0:
+			friend['radius_mean'] /= count
+		else:
+			friend['radius_mean'] = None
 	return
 
 # adds radius_std to each friend assuming they have radius_history and radius_mean:
@@ -125,9 +128,11 @@ def get_radius_std(friends):
 			if radius < friend['radius_mean']:
 				friend['radius_std'] += (radius - friend['radius_mean'])*(radius - friend['radius_mean'])
 				count += 1
-
-		friend['radius_std'] /= count
-		friend['radius_std'] = math.sqrt(friend['radius_std'])
+		if count != 0:
+			friend['radius_std'] /= count
+			friend['radius_std'] = math.sqrt(friend['radius_std'])
+		else:
+			friend['radius_std'] = None
 	return
 
 # adds current radius to each friend:
