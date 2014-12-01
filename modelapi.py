@@ -44,10 +44,9 @@ def get_friends(con, cur, user_id):
 		friends.append({'user1_id':friend[0], 'user2_id': friend[1]})	
 	return friends
 
-def normal_radii(users, places, friends):
+def get_radius_history(users, places, friends):
 	for friend in friends:
-		friend['normal_radius'] = 0
-		friend['data_count'] = 0
+		friend['radius_history'] = []
 	
 	for user in users:
 		user['done'] = False
@@ -86,12 +85,7 @@ def normal_radii(users, places, friends):
 				if users[min_user]['id'] == friend['user1_id'] or users[min_user]['id'] == friend['user2_id']:
 					for user in users:
 						if user['id'] != users[min_user]['id'] and (user['id'] == friend['user1_id'] or user['id'] == friend['user2_id']):
-							friend['normal_radius'] += get_distance(places[users[min_user]['last_index']]['lat'], places[users[min_user]['last_index']]['lon'], places[user['last_index']]['lat'], places[user['last_index']]['lon'])
-							friend['data_count'] += 1
-
-	for friend in friends:
-		friend['normal_radius'] /= friend['data_count']
-		friend.pop('data_count', None)
+							friend['radius_history'].append(get_distance(places[users[min_user]['last_index']]['lat'], places[users[min_user]['last_index']]['lon'], places[user['last_index']]['lat'], places[user['last_index']]['lon']))
 
 	for user in users:
 		user.pop('done', None)
@@ -100,7 +94,31 @@ def normal_radii(users, places, friends):
 
 	return
 
-def current_radii(users, friends):
+def get_radius_mean(friends):
+	for friend in friends:
+		friend['radius_mean'] = 0
+		count = 0
+		for radius in friend['radius_history']:
+			friend['radius_mean'] += radius 
+			count += 1
+
+		friend['radius_mean'] /= count
+	return
+
+def get_radius_std(friends):
+	for friend in friends:
+		friend['radius_std'] = 0
+		count = 0
+		for radius in friend['radius_history']:
+			if radius < friend['radius_mean']:
+				friend['radius_std'] += (radius - friend['radius_mean'])*(radius - friend['radius_mean'])
+				count += 1
+
+		friend['radius_std'] /= count
+		friend['radius_std'] = math.sqrt(friend['radius_std'])
+	return
+
+def get_current_radius(users, friends):
 	for friend in friends:
 		user1 = None
 		user2 = None
