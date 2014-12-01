@@ -112,3 +112,4 @@ def current_radii(users, friends):
 		friend['current_radius'] = get_distance(user1['lat'], user1['lon'], user2['lat'], user2['lon'])
 	return
 
+

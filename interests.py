@@ -7,7 +7,8 @@ import datetime
 from datetime import datetime
 import json
 import sys
-from model import *
+import re
+
 
 sys.stderr = sys.stdout
 
@@ -18,9 +19,10 @@ form = cgi.FieldStorage()
 
 print("Content-type: text/plain\r\n")
 
-if 'user' in form and 'lat' in form and 'lon' in form:
-	cur.execute("update users set lat=%s,lon=%s where id=%s", (form['lat'].value, form['lon'].value, form['user'].value,))
-	con.commit()
+if 'user' in form and 'json' in form:
+	print(form['json'].value)
+	
+	
+	json_data = json.loads(form['json'].value)
+		
 
-if 'user' in form:
-	print(json.dumps(model(con, cur, form['user'].value)))

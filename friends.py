@@ -27,7 +27,7 @@ if 'facebook' in form and 'user' in form and 'name' in form:
 	print(results)
 
 if 'user' in form and 'json' in form:
-	print(form['user'].value)
+	print(form['json'].value)
 	
 	
 	json_data = json.loads(form['json'].value)
