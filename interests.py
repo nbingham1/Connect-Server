@@ -25,4 +25,3 @@ if 'user' in form and 'json' in form:
 	
 	json_data = json.loads(form['json'].value)
 		
-
