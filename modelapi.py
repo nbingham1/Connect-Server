@@ -20,6 +20,8 @@ def get_distance(lat1, long1, lat2, long2):
 	arc = math.acos( cos )
 	return arc*6378100
 
+# returns an array of users:
+# {id, lat, lon, name}
 def get_users(con, cur, user_id):
 	cur.execute("select u.id,u.lat,u.lon,u.name from users as u join friends as f on (u.id=f.user1_id or u.id=f.user2_id) where (f.user1_id=%s or f.user2_id=%s)", (user_id, user_id,))
 	results = cur.fetchall()
@@ -28,14 +30,18 @@ def get_users(con, cur, user_id):
 		users.append({'id':result[0], 'lat':result[1], 'lon':result[2], 'name':result[3]})
 	return users
 
-def get_places(con, cur, user_id):
-	cur.execute("select * from places as p join friends as f inner join locations as l on p.location_id=l.id and (p.user_id=f.user1_id or p.user_id=f.user2_id) where end>%s and (f.user1_id=%s or f.user2_id=%s)", (int(time.time() - 60*60*24*7), user_id, user_id,))
+# returns an array of places:
+# {user_id, start_time, end_time, name, lat, lon}
+def get_places(con, cur, user_id, days):
+	cur.execute("select * from places as p join friends as f inner join locations as l on p.location_id=l.id and (p.user_id=f.user1_id or p.user_id=f.user2_id) where end>%s and (f.user1_id=%s or f.user2_id=%s)", (int(time.time() - 60*60*24*days), user_id, user_id,))
 	results = cur.fetchall()
 	places = []
 	for result in results:
 		places.append({'user_id':result[0], 'start_time':result[2], 'end_time':result[3], 'name':result[4], 'lat':result[10], 'lon':result[11]})
 	return places
 
+# returns an array of friends:
+# {user1_id, user2_id}
 def get_friends(con, cur, user_id):
 	cur.execute("select * from friends where user1_id = %s or user2_id = %s", (int(user_id), int(user_id),))
 	results = cur.fetchall()
@@ -44,6 +50,8 @@ def get_friends(con, cur, user_id):
 		friends.append({'user1_id':friend[0], 'user2_id': friend[1]})	
 	return friends
 
+# adds radius_history to each friend:
+# {user1_id, user2_id, radius_history}
 def get_radius_history(users, places, friends):
 	for friend in friends:
 		friend['radius_history'] = []
@@ -94,6 +102,8 @@ def get_radius_history(users, places, friends):
 
 	return
 
+# adds radius_mean to each friend assuming they have radius_history:
+# {user1_id, user2_id, radius_history, radius_mean}
 def get_radius_mean(friends):
 	for friend in friends:
 		friend['radius_mean'] = 0
@@ -105,6 +115,8 @@ def get_radius_mean(friends):
 		friend['radius_mean'] /= count
 	return
 
+# adds radius_std to each friend assuming they have radius_history and radius_mean:
+# {user1_id, user2_id, radius_history, radius_mean, radius_std}
 def get_radius_std(friends):
 	for friend in friends:
 		friend['radius_std'] = 0
@@ -118,6 +130,8 @@ def get_radius_std(friends):
 		friend['radius_std'] = math.sqrt(friend['radius_std'])
 	return
 
+# adds current radius to each friend:
+# {user1_id, user2_id, current_radius}
 def get_current_radius(users, friends):
 	for friend in friends:
 		user1 = None
@@ -130,4 +144,48 @@ def get_current_radius(users, friends):
 		friend['current_radius'] = get_distance(user1['lat'], user1['lon'], user2['lat'], user2['lon'])
 	return
 
+# adds location_mean_history to each user:
+# {id, lat, lon, name, location_mean_history}
+def get_week_mean(users, places, interval):
+	for user in users:
+		user['week'] = []
+		for i in range(0, 24*7/interval):
+			user['week'].append({'lat':0,'lon':0,'radius':0,'count':0})
+		
+		for place in places:
+			if place['user_id'] == user['id']:
+				start = datetime.fromtimestamp(place['start_time'])
+				end = datetime.fromtimestamp(place['end_time'])
+				for h in range(start.hour, end.hour+1):
+					hour_of_week = (start.weekday()*24+h)/interval
+					user['week'][hour_of_week]['lat'] += place['lat']
+					user['week'][hour_of_week]['lon'] += place['lon']
+					user['week'][hour_of_week]['count'] += 1
+		for h in user['week']:
+			if h['count'] != 0:
+				h['lat'] /= h['count']
+				h['lon'] /= h['count']
+			else:
+				h['lat'] = None
+				h['lon'] = None
 
+	return
+
+def get_week_std(users, places, interval):
+	for user in users:
+		for place in places:
+			if place['user_id'] == user['id']:
+				start = datetime.fromtimestamp(place['start_time'])
+				end = datetime.fromtimestamp(place['end_time'])
+				for h in range(start.hour, end.hour+1):
+					hour_of_week = (start.weekday()*24+h)/interval
+					radius = get_distance(place['lat'], place['lon'], user['week'][hour_of_week]['lat'], user['week'][hour_of_week]['lon'])
+					user['week'][hour_of_week]['radius'] += radius*radius
+
+		for h in user['week']:
+			if h['count'] != 0:
+				h['radius'] /= h['count']
+				h['radius'] = math.sqrt(h['radius'])
+			else:
+				h['radius'] = None
+	return
