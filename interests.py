@@ -20,8 +20,6 @@ form = cgi.FieldStorage()
 print("Content-type: text/plain\r\n")
 
 if 'user' in form and 'json' in form:
-	print(form['json'].value)
-	
-	
 	json_data = json.loads(form['json'].value)
-		
+	interests = json_data['data']
+	print interests
