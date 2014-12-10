@@ -20,10 +20,15 @@ form = cgi.FieldStorage()
 print("Content-type: text/plain\r\n")
 
 if 'facebook' in form and 'user' in form and 'name' in form:
-	cur.execute("update users set facebook=%s, name=%s where id=%s", (form['facebook'].value, form['name'].value, form['user'].value,))
+	cur.execute("update users set facebook=%s, name=%s where id=%s", (form['facebook'].value, form['name'].value, form['user'].value))
 	con.commit()
 	cur.execute("select * from users")
 	results = cur.fetchall()
+
+
+#{"data":[{"name":"Oliver Hoffman","id":"10154780456685328"},
+#        {"name":"Ned Bingham","id":"10202820029122070"},
+#        {"name":"Ching-Ya Huang","id":"726989754023116"}],
 
 if 'user' in form and 'json' in form:
 	json_data = json.loads(form['json'].value)
@@ -42,8 +47,8 @@ if 'user' in form and 'json' in form:
 	
 	for result in results:
 		if long(form['user'].value) < long(result[1]):
-			cur.execute("insert into friends (user1_id,user2_id,health,last_update) values (%s, %s, 0, 0) on duplicate key update user1_id=user1_id", (long(form['user'].value), long(result[1]),))
+			cur.execute("insert into friends (user1_id,user2_id,health,last_update) values (%s, %s, 0, 0) on duplicate key update user1_id=user1_id", (long(form['user'].value), long(result[1])))
 			con.commit()
 		elif long(form['user'].value) != long(result[1]):
-			cur.execute("insert into friends (user1_id,user2_id,health,last_update) values (%s, %s, 0, 0) on duplicate key update user1_id=user1_id", (long(result[1]), long(form['user'].value),))
+			cur.execute("insert into friends (user1_id,user2_id,health,last_update) values (%s, %s, 0, 0) on duplicate key update user1_id=user1_id", (long(result[1]), long(form['user'].value)))
 			con.commit()
