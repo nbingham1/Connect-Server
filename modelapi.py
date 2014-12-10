@@ -50,6 +50,26 @@ def get_friends(con, cur, user_id):
 		friends.append({'user1_id':friend[0], 'user2_id': friend[1]})	
 	return friends
 
+#get_interest_score(friends, user_id)
+def get_interest_score(con, cur, suggestions, user_id):
+    cur.execute("select * from interests where user=%s", (int(user_id),))
+    results = cur.fetchall()
+    for friend in suggestions:
+        print friend
+        score = 0.0
+        cur.execute("select * from interests where user=%s", (int(friend['id']),))
+        friend_results = cur.fetchall()
+        for my_result in results:
+            for friend_result in friend_results:
+                if my_result[1] == friend_result[1]:
+                    score += float(my_result[2]) * float(friend_result[2])
+        friend['score'] = score
+    suggestions = sorted(suggestions, key=lambda k: k['score'], reverse=True) 
+    if len(suggestions) == 0:
+        return []
+    else:
+        return suggestions
+
 # adds radius_history to each friend:
 # {user1_id, user2_id, radius_history}
 def get_radius_history(users, places, friends):

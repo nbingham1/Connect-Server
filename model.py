@@ -25,17 +25,18 @@ def model(con, cur, user_id):
 	get_week_std(users, weeks, model_interval)
 
 	suggestions = []
+	ids = []
 	for friend in friends:
 		if friend['current_radius'] is not None and friend['radius_mean'] is not None and friend['radius_std'] is not None:
 			if friend['current_radius'] <= friend['radius_mean'] - friend['radius_std']:
 				if long(friend['user1_id']) == long(user_id):
 					for user in users:
 						if user['id'] == friend['user2_id']:
-							suggestions.append({'name':user['name'], 'time':'now', 'reason': 'they are nearby'})
+							suggestions.append({'name':user['name'], 'id':user['id'], 'time':'now', 'reason': 'they are nearby'})
 				elif long(friend['user2_id']) == long(user_id):
 					for user in users:
 						if user['id'] == friend['user1_id']:
-							suggestions.append({'name':user['name'], 'time':'now', 'reason': 'they are nearby'})
+							suggestions.append({'name':user['name'], 'id':user['id'], 'time':'now', 'reason': 'they are nearby'})
 	
 		weekday_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 		for user1 in users:
@@ -48,9 +49,22 @@ def model(con, cur, user_id):
 								if distance < max(user1['week'][h]['radius'], 200) and distance < max(user2['week'][h]['radius'], 200):
 									t = weekday_names[h*model_interval/24] + ' between ' + datetime.strptime(str((h*model_interval)%24), "%H").strftime("%I %p") + ' and ' + datetime.strptime(str(((h+1)*model_interval)%24), "%H").strftime("%I %p")
 									if long(user1['id']) == long(user_id):
-										suggestions.append({'name':user2['name'], 'time':t, 'reason':'they generally hang out near where you do around this time'})
+										suggestions.append({'name':user2['name'], 'id':user2['id'], 'time':t, 'reason':'they generally hang out near where you do around this time'})
 									elif long(user2['id']) == long(user_id):
-										suggestions.append({'name':user1['name'], 'time':t, 'reason':'they generally hang out near where you do around this time'})
+										suggestions.append({'name':user1['name'], 'id':user1['id'], 'time':t, 'reason':'they generally hang out near where you do around this time'})
 	
+	if len(suggestions) < 2:
+	    for friend in friends:
+	        if friend['current_radius'] > 100 and friend['current_radius'] < 300:
+	            if long(friend['user1_id']) == long(user_id):
+                        for user in users:
+                            if user['id'] == friend['user2_id']:
+                                suggestions.append({'name':user['name'], 'id':user['id'], 'time':'now', 'reason': 'if you want to hang out with them, they are nearby'})
+                    elif long(friend['user2_id']) == long(user_id):
+                        for user in users:
+                            if user['id'] == friend['user1_id']:
+                                suggestions.append({'name':user['name'], 'id':user['id'], 'time':'now', 'reason': 'if you want to hang out with them, they are nearby'})
+        
+	suggestions = get_interest_score(con, cur, suggestions, user_id)
 	return suggestions
 
